@@ -11,7 +11,8 @@ import {
 // Importação de ícones modernos da Lucide
 import { 
   LayoutDashboard, Users, Printer, FileText, Settings, 
-  RefreshCw, Boxes, Wrench, LogOut, TrendingUp, DollarSign 
+  RefreshCw, Boxes, Wrench, LogOut, TrendingUp, DollarSign,
+  Menu, X
 } from 'lucide-react';
 
 // Importação da logo oficial dos assets
@@ -44,6 +45,7 @@ const dadosSuprimentos = [
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const [currentView, setCurrentView] = useState<ViewMode>('visao_geral');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
   const [metrics, setMetrics] = useState({
     totalClientes: 0,
@@ -94,8 +96,89 @@ const Dashboard: React.FC = () => {
   return (
     <div className="flex min-h-screen bg-slate-50/50 text-slate-800 antialiased font-sans">
       
-      {/* SIDEBAR COM DESIGN FLUTUANTE PREMIUM */}
-      <aside className="w-64 bg-slate-900 text-slate-200 flex flex-col justify-between shadow-premium border-r border-slate-800/60 print:hidden z-30">
+      {/* SIDEBAR MOBILE OVERLAY & DRAWER */}
+      {isMobileMenuOpen && (
+        <div className="fixed inset-0 z-50 flex lg:hidden">
+          <div 
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" 
+            onClick={() => setIsMobileMenuOpen(false)}
+          ></div>
+          
+          <div className="relative flex w-64 max-w-xs flex-1 flex-col bg-slate-900 text-slate-200 shadow-premium transition-transform animate-in slide-in-from-left duration-200">
+            <div className="absolute top-4 right-4 z-10">
+              <button
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="p-1.5 bg-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-700 rounded-lg transition-colors cursor-pointer"
+                aria-label="Fechar menu"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto pt-5 pb-4">
+              <div className="px-5 pb-5 border-b border-slate-800/80">
+                <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col items-center justify-center">
+                  <img 
+                    src={logoOficial} 
+                    alt="Raupp Soluções em Impressão" 
+                    className="h-9 w-auto object-contain select-none"
+                  />
+                  <span className="text-[8px] text-brand-primary font-bold tracking-widest uppercase mt-2 bg-blue-50 px-2 py-0.5 rounded border border-blue-100/60">
+                    Outsourcing System
+                  </span>
+                </div>
+              </div>
+              
+              <nav className="p-4 space-y-1">
+                {[
+                  { id: 'visao_geral', label: 'Visão Geral', icon: LayoutDashboard },
+                  { id: 'clientes', label: 'Clientes', icon: Users },
+                  { id: 'equipamentos', label: 'Equipamentos', icon: Printer },
+                  { id: 'chamados', label: 'Chamados / OS', icon: Wrench },
+                  { id: 'oficina', label: 'OS de Oficina', icon: Settings },
+                  { id: 'suprimentos', label: 'Suprimentos', icon: RefreshCw },
+                  { id: 'estoque', label: 'Estoque', icon: Boxes },
+                  { id: 'fiscal', label: 'Painel Fiscal', icon: FileText },
+                  { id: 'financeiro', label: 'Financeiro', icon: DollarSign },
+                ].map((item) => {
+                  const Icon = item.icon;
+                  const isActive = currentView === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => {
+                        setCurrentView(item.id as ViewMode);
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${
+                        isActive 
+                          ? 'bg-brand-primary text-white shadow-lg shadow-brand-primary/20 font-semibold translate-x-1' 
+                          : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-100'
+                      }`}
+                    >
+                      <Icon className={`w-4 h-4 transition-transform duration-200 ${isActive ? 'scale-110' : ''}`} />
+                      <span>{item.label}</span>
+                    </button>
+                  );
+                })}
+              </nav>
+            </div>
+            
+            <div className="p-4 border-t border-slate-800/60">
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center justify-center space-x-2 px-4 py-2.5 bg-rose-500/10 hover:bg-rose-600 text-rose-400 hover:text-white rounded-lg transition-all duration-200 text-xs font-semibold tracking-wide uppercase cursor-pointer"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>Sair do Sistema</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SIDEBAR COM DESIGN FLUTUANTE PREMIUM (DESKTOP) */}
+      <aside className="w-64 bg-slate-900 text-slate-200 lg:flex flex-col justify-between shadow-premium border-r border-slate-800/60 print:hidden z-30 hidden">
         <div>
           {/* CONTAINER DA LOGO INTEGRADA COMO CARD FLUTUANTE */}
           <div className="p-5 border-b border-slate-800/80">
@@ -159,8 +242,15 @@ const Dashboard: React.FC = () => {
       {/* CONTEÚDO PRINCIPAL */}
       <main aria-label="Painel principal do ERP" className="flex-1 overflow-y-auto flex flex-col">
         {/* HEADER LIMPO E ELEGANTE */}
-        <header className="bg-white/80 backdrop-blur-md sticky top-0 z-20 px-8 py-5 flex justify-between items-center border-b border-slate-200/60 print:hidden">
+        <header className="bg-white/80 backdrop-blur-md sticky top-0 z-20 px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center border-b border-slate-200/60 print:hidden">
           <div className="flex items-center space-x-2">
+            <button 
+              onClick={() => setIsMobileMenuOpen(true)}
+              className="lg:hidden p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer mr-2"
+              aria-label="Abrir menu de navegação"
+            >
+              <Menu className="w-5.5 h-5.5" />
+            </button>
             <h1 className="text-xs font-bold text-slate-400 uppercase tracking-widest">
               ERP Raupp <span className="mx-2 text-slate-300">|</span> 
               <span className="text-slate-700 font-display text-sm lowercase capitalize">
@@ -177,7 +267,7 @@ const Dashboard: React.FC = () => {
           </div>
         </header>
 
-        <div className="p-8 flex-1">
+        <div className="p-4 sm:p-6 lg:p-8 flex-1">
           {currentView === 'visao_geral' && (
             <div className="space-y-8">
               <div>

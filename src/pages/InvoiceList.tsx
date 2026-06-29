@@ -298,7 +298,7 @@ const InvoiceList: React.FC = () => {
 
       {/* MODAL DE FECHAMENTO */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
           <div className="bg-white rounded-xl shadow-xl border border-slate-200 w-full max-w-lg p-6 space-y-4">
             <h3 className="text-lg font-bold text-slate-800 border-b pb-2">Novo Fechamento de Contrato</h3>
             <form onSubmit={handleEmitirNota} className="space-y-4">
