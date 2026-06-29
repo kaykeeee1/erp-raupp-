@@ -58,20 +58,6 @@ const EquipmentList: React.FC = () => {
   const [deleteTarget, setDeleteTarget] = useState<Equipamento | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  useEffect(() => {
-    fetchEquipamentos();
-    fetchClientes();
-  }, []);
-
-  useEffect(() => {
-    if (!formData.cliente_id) {
-      setLocais([]);
-      setFormData(prev => ({ ...prev, local_instalacao_id: '' }));
-      return;
-    }
-    fetchLocaisDoCliente(formData.cliente_id);
-  }, [formData.cliente_id]);
-
   const fetchEquipamentos = async () => {
     try {
       setLoading(true);
@@ -86,8 +72,9 @@ const EquipmentList: React.FC = () => {
 
       if (sbError) throw sbError;
       setEquipamentos(data || []);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+      setError(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -97,8 +84,9 @@ const EquipmentList: React.FC = () => {
     try {
       const { data } = await supabase.from('tb_clientes').select('id, razao_social').order('razao_social', { ascending: true });
       setClientes(data || []);
-    } catch (err: any) {
-      console.error(err.message);
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+      console.error(errorMsg);
     }
   };
 
@@ -111,22 +99,37 @@ const EquipmentList: React.FC = () => {
         .eq('cliente_id', clienteId)
         .order('nome_local', { ascending: true });
       setLocais(data || []);
-    } catch (err: any) {
-      console.error(err.message);
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+      console.error(errorMsg);
     } finally {
       setLoadingLocais(false);
     }
   };
 
+  useEffect(() => {
+    fetchEquipamentos();
+    fetchClientes();
+  }, []);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    if (name === 'cliente_id') {
+      if (!value) {
+        setLocais([]);
+        setFormData((prev) => ({ ...prev, local_instalacao_id: '' }));
+      } else {
+        fetchLocaisDoCliente(value);
+      }
+    }
   };
 
   // ---- CRUD: CREATE ----
   const handleOpenCreateModal = () => {
     setEditingEquip(null);
     setFormData({ ...INITIAL_FORM });
+    setLocais([]);
     setError(null);
     setIsModalOpen(true);
   };
@@ -144,6 +147,11 @@ const EquipmentList: React.FC = () => {
       cliente_id: equip.cliente_id || '',
       local_instalacao_id: equip.local_instalacao_id || '',
     });
+    if (equip.cliente_id) {
+      fetchLocaisDoCliente(equip.cliente_id);
+    } else {
+      setLocais([]);
+    }
     setError(null);
     setIsModalOpen(true);
   };
@@ -178,8 +186,9 @@ const EquipmentList: React.FC = () => {
       setEditingEquip(null);
       setIsModalOpen(false);
       fetchEquipamentos();
-    } catch (err: any) {
-      setError(err.message || 'Erro ao salvar equipamento.');
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+      setError(errorMsg || 'Erro ao salvar equipamento.');
     } finally {
       setIsSaving(false);
     }
@@ -195,8 +204,9 @@ const EquipmentList: React.FC = () => {
       if (error) throw error;
       setDeleteTarget(null);
       fetchEquipamentos();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+      setError(errorMsg);
     } finally {
       setIsDeleting(false);
     }

@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
+import XmlUploadModal from '../components/XmlUploadModal';
 
 interface NotaFiscal {
   id: string;
@@ -40,8 +41,10 @@ const InvoiceList: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isXmlModalOpen, setIsXmlModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [invoiceToPrint, setInvoiceToPrint] = useState<NotaFiscal | null>(null);
+  const [successToast, setSuccessToast] = useState<string | null>(null);
 
   const [selectedCliente, setSelectedCliente] = useState<ClienteCompleto | null>(null);
   const [formData, setFormData] = useState({
@@ -51,33 +54,7 @@ const InvoiceList: React.FC = () => {
     contador_atual: '0',
   });
 
-  const [calculoPrevio, setCalculoPrevio] = useState({
-    totalImpresso: 0,
-    excedente: 0,
-    valorExcedente: 0,
-    valorTotal: 0
-  });
 
-  useEffect(() => {
-    fetchNotas();
-    fetchClientes();
-  }, []);
-
-  useEffect(() => {
-    if (!selectedCliente) {
-      setCalculoPrevio({ totalImpresso: 0, excedente: 0, valorExcedente: 0, valorTotal: 0 });
-      return;
-    }
-    const ant = Number(formData.contador_anterior) || 0;
-    const atu = Number(formData.contador_atual) || 0;
-    
-    const totalImpresso = Math.max(0, atu - ant);
-    const excedente = Math.max(0, totalImpresso - selectedCliente.franquia_paginas);
-    const valorExcedente = excedente * selectedCliente.valor_clique_excedente;
-    const valorTotal = selectedCliente.valor_franquia + valorExcedente;
-
-    setCalculoPrevio({ totalImpresso, excedente, valorExcedente, valorTotal });
-  }, [formData.contador_anterior, formData.contador_atual, selectedCliente]);
 
   const fetchNotas = async () => {
     try {
@@ -89,8 +66,9 @@ const InvoiceList: React.FC = () => {
 
       if (error) throw error;
       setNotas(data || []);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+      setError(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -103,6 +81,26 @@ const InvoiceList: React.FC = () => {
       .order('razao_social', { ascending: true });
     if (data) setClientes(data);
   };
+
+  useEffect(() => {
+    fetchNotas();
+    fetchClientes();
+  }, []);
+
+  const calculoPrevio = useMemo(() => {
+    if (!selectedCliente) {
+      return { totalImpresso: 0, excedente: 0, valorExcedente: 0, valorTotal: 0 };
+    }
+    const ant = Number(formData.contador_anterior) || 0;
+    const atu = Number(formData.contador_atual) || 0;
+    
+    const totalImpresso = Math.max(0, atu - ant);
+    const excedente = Math.max(0, totalImpresso - selectedCliente.franquia_paginas);
+    const valorExcedente = excedente * selectedCliente.valor_clique_excedente;
+    const valorTotal = selectedCliente.valor_franquia + valorExcedente;
+
+    return { totalImpresso, excedente, valorExcedente, valorTotal };
+  }, [formData.contador_anterior, formData.contador_atual, selectedCliente]);
 
   const handleClienteChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const id = e.target.value;
@@ -144,8 +142,9 @@ const InvoiceList: React.FC = () => {
       setFormData({ cliente_id: '', tipo_nota: 'Serviço', contador_anterior: '0', contador_atual: '0' });
       setSelectedCliente(null);
       fetchNotas();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+      setError(errorMsg);
     } finally {
       setIsSaving(false);
     }
@@ -184,18 +183,53 @@ const InvoiceList: React.FC = () => {
         }
       `}</style>
 
+      <XmlUploadModal 
+        isOpen={isXmlModalOpen} 
+        onClose={() => setIsXmlModalOpen(false)} 
+        onSuccess={(msg) => {
+          setSuccessToast(msg);
+          fetchNotas();
+          setTimeout(() => setSuccessToast(null), 5000);
+        }}
+      />
+
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h3 className="text-lg font-bold text-slate-800">Faturamento Automatizado</h3>
+          <h3 className="text-lg font-bold text-slate-800 font-display">Faturamento Automatizado</h3>
           <p className="text-slate-500 text-xs mt-0.5">Fechamento de faturas com geração de extratos auditáveis para o cliente.</p>
         </div>
-        <button 
-          onClick={() => setIsModalOpen(true)}
-          className="px-4 py-2 text-white bg-emerald-600 hover:bg-emerald-700 transition-colors shadow-sm font-medium text-sm rounded-lg"
-        >
-          + Processar Fechamento (NF)
-        </button>
+        <div className="flex space-x-2">
+          <button 
+            onClick={() => setIsXmlModalOpen(true)}
+            className="px-4 py-2 text-slate-700 bg-white hover:bg-slate-50 transition-colors shadow-sm font-semibold text-xs rounded-lg border border-slate-200 cursor-pointer flex items-center space-x-1.5 uppercase tracking-wide"
+          >
+            <span>📥 Importar XML (Compra)</span>
+          </button>
+          <button 
+            onClick={() => setIsModalOpen(true)}
+            className="px-4 py-2 text-white bg-emerald-600 hover:bg-emerald-700 transition-colors shadow-sm font-semibold text-xs rounded-lg cursor-pointer flex items-center space-x-1.5 uppercase tracking-wide"
+          >
+            <span>+ Novo Fechamento (Saída)</span>
+          </button>
+        </div>
       </div>
+
+      {successToast && (
+        <div className="mb-6 p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm font-semibold rounded-lg flex items-center justify-between shadow-sm animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="flex items-center space-x-2">
+            <span>🚀</span>
+            <span>{successToast}</span>
+          </div>
+          <button onClick={() => setSuccessToast(null)} className="text-emerald-500 hover:text-emerald-800 font-bold ml-2">×</button>
+        </div>
+      )}
+
+      {error && (
+        <div className="mb-6 p-3.5 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg flex items-center justify-between">
+          <span className="font-medium">{error}</span>
+          <button onClick={() => setError(null)} className="text-red-500 hover:text-red-700 font-bold ml-2">×</button>
+        </div>
+      )}
 
       {loading ? (
         <p className="p-6 text-slate-400 text-sm">Buscando histórico fiscal...</p>
@@ -219,12 +253,20 @@ const InvoiceList: React.FC = () => {
                     <span className="font-mono font-bold text-slate-900">{nota.numero_nf}</span>
                     <span className="block text-xs text-slate-400">{nota.tipo_nota}</span>
                   </td>
-                  <td className="px-6 py-4 font-semibold text-slate-800">{nota.tb_clientes?.razao_social}</td>
+                  <td className="px-6 py-4 font-semibold text-slate-800">
+                    {nota.tb_clientes?.razao_social || (nota as any).fornecedor_nome || 'Fornecedor/Cliente Não Identificado'}
+                  </td>
                   <td className="px-6 py-4 font-mono text-xs text-slate-600">
-                    {(nota.metadados_fiscais.contador_anterior || 0).toLocaleString()} → {(nota.metadados_fiscais.contador_atual || 0).toLocaleString()}
+                    {nota.tipo_nota === 'Entrada' ? (
+                      <span className="text-slate-400 italic">Compra de Insumos</span>
+                    ) : (
+                      `${(nota.metadados_fiscais.contador_anterior || 0).toLocaleString()} → ${(nota.metadados_fiscais.contador_atual || 0).toLocaleString()}`
+                    )}
                   </td>
                   <td className="px-6 py-4">
-                    {nota.metadados_fiscais.paginas_excedentes && nota.metadados_fiscais.paginas_excedentes > 0 ? (
+                    {nota.tipo_nota === 'Entrada' ? (
+                      <span className="text-slate-400 italic">Estoque Atualizado</span>
+                    ) : nota.metadados_fiscais.paginas_excedentes && nota.metadados_fiscais.paginas_excedentes > 0 ? (
                       <span className="text-amber-600 font-semibold">+{nota.metadados_fiscais.paginas_excedentes.toLocaleString()} pág.</span>
                     ) : (
                       <span className="text-slate-400 italic">Na franquia</span>
@@ -234,12 +276,18 @@ const InvoiceList: React.FC = () => {
                     R$ {nota.valor_bruto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <button 
-                      onClick={() => setInvoiceToPrint(nota)}
-                      className="px-3 py-1.5 bg-slate-100 hover:bg-blue-50 hover:text-blue-600 text-slate-700 font-bold rounded text-xs border border-slate-200 transition-all"
-                    >
-                      📄 Extrato PDF
-                    </button>
+                    {nota.tipo_nota === 'Entrada' ? (
+                      <span className="text-xs text-slate-400 bg-slate-50 px-2.5 py-1.5 rounded border border-slate-100 font-semibold uppercase tracking-wider">
+                        Nota de Entrada
+                      </span>
+                    ) : (
+                      <button 
+                        onClick={() => setInvoiceToPrint(nota)}
+                        className="px-3 py-1.5 bg-slate-100 hover:bg-blue-50 hover:text-blue-600 text-slate-700 font-bold rounded text-xs border border-slate-200 transition-all cursor-pointer"
+                      >
+                        📄 Extrato PDF
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -255,8 +303,8 @@ const InvoiceList: React.FC = () => {
             <h3 className="text-lg font-bold text-slate-800 border-b pb-2">Novo Fechamento de Contrato</h3>
             <form onSubmit={handleEmitirNota} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase">Selecione o Cliente *</label>
-                <select name="cliente_id" value={formData.cliente_id} onChange={handleClienteChange} required className="w-full px-3 py-2 mt-1 border rounded-lg text-sm bg-white outline-none border-slate-200">
+                <label htmlFor="cliente_select" className="block text-xs font-bold text-slate-500 uppercase">Selecione o Cliente *</label>
+                <select id="cliente_select" name="cliente_id" value={formData.cliente_id} onChange={handleClienteChange} required className="w-full px-3 py-2 mt-1 border rounded-lg text-sm bg-white outline-none border-slate-200">
                   <option value="">-- Buscar Cliente --</option>
                   {clientes.map((c) => (<option key={c.id} value={c.id}>{c.razao_social}</option>))}
                 </select>
@@ -270,12 +318,12 @@ const InvoiceList: React.FC = () => {
               )}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase">Contador Anterior *</label>
-                  <input type="number" name="contador_anterior" value={formData.contador_anterior} onChange={(e) => setFormData(prev => ({ ...prev, contador_anterior: e.target.value }))} required className="w-full px-3 py-2 mt-1 border rounded-lg text-sm outline-none border-slate-200" />
+                  <label htmlFor="contador_anterior" className="block text-xs font-bold text-slate-500 uppercase">Contador Anterior *</label>
+                  <input id="contador_anterior" type="number" name="contador_anterior" value={formData.contador_anterior} onChange={(e) => setFormData(prev => ({ ...prev, contador_anterior: e.target.value }))} required className="w-full px-3 py-2 mt-1 border rounded-lg text-sm outline-none border-slate-200" />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase">Contador Atual *</label>
-                  <input type="number" name="contador_atual" value={formData.contador_atual} onChange={(e) => setFormData(prev => ({ ...prev, contador_atual: e.target.value }))} required className="w-full px-3 py-2 mt-1 border rounded-lg text-sm outline-none border-slate-200" />
+                  <label htmlFor="contador_atual" className="block text-xs font-bold text-slate-500 uppercase">Contador Atual *</label>
+                  <input id="contador_atual" type="number" name="contador_atual" value={formData.contador_atual} onChange={(e) => setFormData(prev => ({ ...prev, contador_atual: e.target.value }))} required className="w-full px-3 py-2 mt-1 border rounded-lg text-sm outline-none border-slate-200" />
                 </div>
               </div>
               {selectedCliente && (

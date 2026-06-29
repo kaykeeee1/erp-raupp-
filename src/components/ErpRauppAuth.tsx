@@ -26,11 +26,12 @@ const ErpRauppAuth: React.FC = () => {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
       }
-    } catch (err: any) {
-      if (err.message === 'Invalid login credentials') {
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+      if (errorMsg === 'Invalid login credentials') {
         setError('E-mail ou senha incorretos.');
       } else {
-        setError(err.message);
+        setError(errorMsg);
       }
     } finally {
       setLoading(false);

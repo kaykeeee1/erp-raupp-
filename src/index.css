@@ -1,1 +1,35 @@
 @import "tailwindcss";
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
+@theme {
+  --font-sans: 'Inter', sans-serif;
+  --font-display: 'Outfit', sans-serif;
+  
+  /* Cores oficiais da logo Raupp */
+  --color-blue-50: #f0f4fa;
+  --color-blue-100: #dbe5f4;
+  --color-blue-200: #bdd0e9;
+  --color-blue-500: #4275c2;
+  --color-blue-600: #2b539c; /* Azul Oficial Raupp */
+  --color-blue-700: #1e3a6d;
+  --color-blue-800: #142749;
+  
+  --color-brand-primary: #2b539c;
+  --color-brand-primary-hover: #1e3a6d;
+  --color-brand-accent: #ea580c;
+  --color-brand-accent-hover: #c2410c;
+  --color-brand-light: #38bdf8;
+  
+  --shadow-premium: 0 10px 30px -10px rgba(15, 23, 42, 0.06), 0 1px 3px rgba(15, 23, 42, 0.02);
+  --shadow-premium-hover: 0 20px 40px -15px rgba(15, 23, 42, 0.1), 0 1px 5px rgba(15, 23, 42, 0.03);
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: #f8fafc;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+}

@@ -4,8 +4,10 @@ import { supabase } from './lib/supabase';
 import ErpRauppAuth from './components/ErpRauppAuth';
 import Dashboard from './pages/Dashboard';
 
+import type { Session } from '@supabase/supabase-js';
+
 const App: React.FC = () => {
-  const [session, setSession] = useState<any>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

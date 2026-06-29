@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { estoqueService } from '../services/estoqueService';
+import type { EstoqueItem } from '../services/estoqueService';
 
 interface TrocaSuprimento {
   id: string;
@@ -23,7 +25,7 @@ interface EquipamentoDropdown {
 
 const INITIAL_FORM = {
   equipamento_id: '',
-  tipo: 'Toner Preto',
+  tipo: '',
   contador_na_troca: 0,
   tecnico_responsavel: '',
   observacoes: '',
@@ -35,6 +37,9 @@ const ExchangeList: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Insumos carregados do estoque
+  const [tonersEstoque, setTonersEstoque] = useState<EstoqueItem[]>([]);
+
   // Estados para o Modal de Cadastro/Edição
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -44,11 +49,6 @@ const ExchangeList: React.FC = () => {
   // Confirmação de exclusão
   const [deleteTarget, setDeleteTarget] = useState<TrocaSuprimento | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-
-  useEffect(() => {
-    fetchTrocas();
-    fetchEquipamentos();
-  }, []);
 
   const fetchTrocas = async () => {
     try {
@@ -60,8 +60,9 @@ const ExchangeList: React.FC = () => {
 
       if (error) throw error;
       setTrocas(data || []);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+      setError(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -76,10 +77,26 @@ const ExchangeList: React.FC = () => {
 
       if (error) throw error;
       setEquipamentos(data || []);
-    } catch (err: any) {
-      console.error('Erro ao carregar equipamentos para o dropdown:', err.message);
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+      console.error('Erro ao carregar equipamentos para o dropdown:', errorMsg);
     }
   };
+
+  const fetchToners = async () => {
+    try {
+      const data = await estoqueService.getEstoque();
+      setTonersEstoque(data.filter((item) => item.categoria === 'Toner'));
+    } catch (err) {
+      console.error('Erro ao carregar toners do estoque:', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchTrocas();
+    fetchEquipamentos();
+    fetchToners();
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -91,6 +108,7 @@ const ExchangeList: React.FC = () => {
     setEditingTroca(null);
     setFormData({ ...INITIAL_FORM });
     setError(null);
+    fetchToners();
     setIsModalOpen(true);
   };
 
@@ -105,6 +123,7 @@ const ExchangeList: React.FC = () => {
       observacoes: troca.observacoes || '',
     });
     setError(null);
+    fetchToners();
     setIsModalOpen(true);
   };
 
@@ -114,19 +133,36 @@ const ExchangeList: React.FC = () => {
       setError('Por favor, selecione um equipamento.');
       return;
     }
+    if (!formData.tipo) {
+      setError('Por favor, selecione um insumo.');
+      return;
+    }
 
     setIsSaving(true);
     setError(null);
 
-    const payload = {
-      equipamento_id: formData.equipamento_id,
-      tipo: formData.tipo,
-      contador_na_troca: Number(formData.contador_na_troca),
-      tecnico_responsavel: formData.tecnico_responsavel,
-      observacoes: formData.observacoes,
-    };
-
     try {
+      // Se for uma nova troca de suprimento, realiza a baixa no estoque
+      if (!editingTroca) {
+        const selectedToner = tonersEstoque.find(t => t.item_nome === formData.tipo);
+        if (selectedToner) {
+          if (selectedToner.quantidade_atual <= 0) {
+            setError(`O insumo "${selectedToner.item_nome}" está fora de estoque.`);
+            setIsSaving(false);
+            return;
+          }
+          await estoqueService.updateQuantidade(selectedToner.id, selectedToner.quantidade_atual - 1);
+        }
+      }
+
+      const payload = {
+        equipamento_id: formData.equipamento_id,
+        tipo: formData.tipo,
+        contador_na_troca: Number(formData.contador_na_troca),
+        tecnico_responsavel: formData.tecnico_responsavel,
+        observacoes: formData.observacoes,
+      };
+
       if (editingTroca) {
         const { error } = await supabase.from('tb_consumiveis').update(payload).eq('id', editingTroca.id);
         if (error) throw error;
@@ -139,8 +175,10 @@ const ExchangeList: React.FC = () => {
       setEditingTroca(null);
       setIsModalOpen(false);
       fetchTrocas();
-    } catch (err: any) {
-      setError(err.message || 'Erro ao registar troca.');
+      fetchToners();
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+      setError(errorMsg || 'Erro ao registar troca.');
     } finally {
       setIsSaving(false);
     }
@@ -156,8 +194,9 @@ const ExchangeList: React.FC = () => {
       if (error) throw error;
       setDeleteTarget(null);
       fetchTrocas();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+      setError(errorMsg);
     } finally {
       setIsDeleting(false);
     }
@@ -259,8 +298,9 @@ const ExchangeList: React.FC = () => {
 
             <form onSubmit={handleSubmitTroca} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase">Selecione a Impressora *</label>
+                <label htmlFor="form_equipamento" className="block text-xs font-bold text-slate-500 uppercase">Selecione a Impressora *</label>
                 <select
+                  id="form_equipamento"
                   name="equipamento_id"
                   value={formData.equipamento_id}
                   onChange={handleInputChange}
@@ -276,22 +316,27 @@ const ExchangeList: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase">Tipo de Consumível *</label>
+                  <label htmlFor="form_tipo_consumivel" className="block text-xs font-bold text-slate-500 uppercase">Tipo de Consumível *</label>
                   <select
+                    id="form_tipo_consumivel"
                     name="tipo"
                     value={formData.tipo}
                     onChange={handleInputChange}
+                    required
                     className="w-full px-3 py-2 mt-1 border rounded-lg text-sm bg-white outline-none border-slate-200"
                   >
-                    <option value="Toner Preto">Toner Preto</option>
-                    <option value="Cilindro">Cilindro (Drum)</option>
-                    <option value="Unidade de Fusão">Unidade de Fusão</option>
-                    <option value="Kit de Roletes">Kit de Roletes</option>
+                    <option value="">-- Escolha no Estoque --</option>
+                    {tonersEstoque.map((t) => (
+                      <option key={t.id} value={t.item_nome} disabled={t.quantidade_atual <= 0}>
+                        {t.item_nome} ({t.quantidade_atual} un.)
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase">Contador Atual *</label>
+                  <label htmlFor="form_contador" className="block text-xs font-bold text-slate-500 uppercase">Contador Atual *</label>
                   <input
+                    id="form_contador"
                     type="number"
                     name="contador_na_troca"
                     value={formData.contador_na_troca}

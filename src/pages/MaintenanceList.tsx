@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { estoqueService } from '../services/estoqueService';
+import type { EstoqueItem } from '../services/estoqueService';
 
 interface OSBancada {
   id: string;
@@ -43,21 +45,11 @@ const MaintenanceList: React.FC = () => {
 
   // Formulário Atualização/Laudo
   const [laudoData, setLaudoData] = useState({
-    status: 'Em Manutenção', diagnostico_tecnico: '', valor_pecas: '0', valor_mao_de_obra: '0'
+    status: 'Em Manutenção', diagnostico_tecnico: '', valor_pecas: '0', valor_mao_de_obra: '0', peca_id: ''
   });
 
-  useEffect(() => {
-    fetchOrdens();
-    fetchClientes();
-  }, []);
-
-  useEffect(() => {
-    if (!formData.cliente_id || isAvulso) {
-      setEquipamentos([]);
-      return;
-    }
-    fetchEquipamentosDoCliente(formData.cliente_id);
-  }, [formData.cliente_id, isAvulso]);
+  // Peças carregadas do estoque
+  const [pecasEstoque, setPecasEstoque] = useState<EstoqueItem[]>([]);
 
   const fetchOrdens = async () => {
     try {
@@ -69,8 +61,9 @@ const MaintenanceList: React.FC = () => {
         .order('criado_em', { ascending: false });
       if (error) throw error;
       setOrdens(data || []);
-    } catch (err: any) {
-      alert(err.message);
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+      alert(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -86,14 +79,31 @@ const MaintenanceList: React.FC = () => {
     if (data) setEquipamentos(data);
   };
 
+  const fetchPecas = async () => {
+    try {
+      const data = await estoqueService.getEstoque();
+      setPecasEstoque(data.filter((item) => item.categoria === 'Peça'));
+    } catch (err) {
+      console.error('Erro ao carregar peças do estoque:', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchOrdens();
+    fetchClientes();
+    fetchPecas();
+  }, []);
+
   const handleOpenLaudo = (os: OSBancada) => {
     setSelectedOS(os);
     setLaudoData({
       status: os.status,
       diagnostico_tecnico: os.diagnostico_tecnico || '',
       valor_pecas: os.valor_pecas.toString(),
-      valor_mao_de_obra: os.valor_mao_de_obra.toString()
+      valor_mao_de_obra: os.valor_mao_de_obra.toString(),
+      peca_id: ''
     });
+    fetchPecas();
   };
 
   const handleAbrirOS = async (e: React.FormEvent) => {
@@ -120,8 +130,9 @@ const MaintenanceList: React.FC = () => {
       setIsModalOpen(false);
       setFormData({ cliente_id: '', equipamento_id: '', marca: '', modelo: '', numero_serie: '', defeito_relatado: '' });
       fetchOrdens();
-    } catch (err: any) {
-      alert(err.message);
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+      alert(errorMsg);
     }
   };
 
@@ -134,6 +145,18 @@ const MaintenanceList: React.FC = () => {
     const total = pecas + maoObra;
 
     try {
+      // Se selecionou uma peça de reposição do estoque, realiza a baixa
+      if (laudoData.peca_id) {
+        const selectedPeca = pecasEstoque.find((p) => p.id === laudoData.peca_id);
+        if (selectedPeca) {
+          if (selectedPeca.quantidade_atual <= 0) {
+            alert(`A peça "${selectedPeca.item_nome}" está sem saldo em estoque.`);
+            return;
+          }
+          await estoqueService.updateQuantidade(selectedPeca.id, selectedPeca.quantidade_atual - 1);
+        }
+      }
+
       const { error } = await supabase
         .from('tb_os_bancada')
         .update({
@@ -149,8 +172,10 @@ const MaintenanceList: React.FC = () => {
       if (error) throw error;
       setSelectedOS(null);
       fetchOrdens();
-    } catch (err: any) {
-      alert(err.message);
+      fetchPecas();
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+      alert(errorMsg);
     }
   };
 
@@ -192,7 +217,12 @@ const MaintenanceList: React.FC = () => {
           <p className="text-slate-500 text-xs mt-0.5">Controle de laboratório interno, orçamentos e consertos avulsos.</p>
         </div>
         <button 
-          onClick={() => setIsModalOpen(true)}
+          onClick={() => {
+            setIsAvulso(false);
+            setFormData({ cliente_id: '', equipamento_id: '', marca: '', modelo: '', numero_serie: '', defeito_relatado: '' });
+            setEquipamentos([]);
+            setIsModalOpen(true);
+          }}
           className="px-4 py-2 text-white bg-blue-600 hover:bg-blue-700 font-medium text-sm rounded-lg transition-colors shadow-sm"
         >
           + Entrada de Máquina (OS)
@@ -238,7 +268,7 @@ const MaintenanceList: React.FC = () => {
                   </td>
                   <td className="px-6 py-4">
                     <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
-                      os.status === 'Orçamento' ? 'bg-purple-100 text-purple-800' :
+                      os.status === 'Orçamento' ? 'bg-amber-100 text-amber-800' :
                       os.status === 'Em Manutenção' ? 'bg-blue-100 text-blue-800' :
                       os.status === 'Pronto' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'
                     }`}>{os.status}</span>
@@ -276,18 +306,31 @@ const MaintenanceList: React.FC = () => {
               
               <div className="flex space-x-6 p-2 bg-slate-50 rounded-lg border text-xs font-bold text-slate-600">
                 <label className="flex items-center space-x-2 cursor-pointer">
-                  <input type="radio" checked={!isAvulso} onChange={() => setIsAvulso(false)} className="text-blue-600" />
+                  <input type="radio" checked={!isAvulso} onChange={() => { setIsAvulso(false); if (formData.cliente_id) { fetchEquipamentosDoCliente(formData.cliente_id); } else { setEquipamentos([]); } }} className="text-blue-600" />
                   <span>Máquina do Contrato (Parque Raupp)</span>
                 </label>
                 <label className="flex items-center space-x-2 cursor-pointer">
-                  <input type="radio" checked={isAvulso} onChange={() => setIsAvulso(true)} className="text-blue-600" />
+                  <input type="radio" checked={isAvulso} onChange={() => { setIsAvulso(true); setEquipamentos([]); }} className="text-blue-600" />
                   <span>Máquina Própria do Cliente (Avulsa)</span>
                 </label>
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase">Cliente Dono *</label>
-                <select value={formData.cliente_id} onChange={(e) => setFormData(prev => ({ ...prev, cliente_id: e.target.value }))} required className="w-full px-3 py-2 mt-1 border rounded-lg text-sm bg-white outline-none">
+                <select 
+                  value={formData.cliente_id} 
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setFormData(prev => ({ ...prev, cliente_id: val, equipamento_id: '' }));
+                    if (val && !isAvulso) {
+                      fetchEquipamentosDoCliente(val);
+                    } else {
+                      setEquipamentos([]);
+                    }
+                  }} 
+                  required 
+                  className="w-full px-3 py-2 mt-1 border rounded-lg text-sm bg-white outline-none"
+                >
                   <option value="">-- Selecione o Cliente --</option>
                   {clientes.map(c => <option key={c.id} value={c.id}>{c.razao_social}</option>)}
                 </select>
@@ -339,8 +382,8 @@ const MaintenanceList: React.FC = () => {
             <h3 className="text-base font-bold text-slate-800 border-b pb-2">Laudo e Evolução de Oficina</h3>
             <form onSubmit={handleAtualizarOS} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase">Estágio da OS *</label>
-                <select value={laudoData.status} onChange={(e) => setLaudoData(prev => ({ ...prev, status: e.target.value }))} className="w-full px-3 py-2 mt-1 border rounded-lg text-sm bg-white outline-none">
+                <label htmlFor="form_status_os" className="block text-xs font-bold text-slate-500 uppercase">Estágio da OS *</label>
+                <select id="form_status_os" value={laudoData.status} onChange={(e) => setLaudoData(prev => ({ ...prev, status: e.target.value }))} className="w-full px-3 py-2 mt-1 border rounded-lg text-sm bg-white outline-none">
                   <option value="Orçamento">Aguardando Orçamento</option>
                   <option value="Aprovado">Orçamento Aprovado</option>
                   <option value="Em Manutenção">Em Manutenção (Na Bancada)</option>
@@ -350,17 +393,45 @@ const MaintenanceList: React.FC = () => {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase">Diagnóstico Técnico / Peças Trocadas</label>
-                <textarea value={laudoData.diagnostico_tecnico} onChange={(e) => setLaudoData(prev => ({ ...prev, diagnostico_tecnico: e.target.value }))} rows={3} className="w-full px-3 py-2 mt-1 border rounded-lg text-sm outline-none resize-none" />
+                <label htmlFor="form_peca_estoque" className="block text-xs font-bold text-slate-500 uppercase">Peça do Estoque (Baixa Automática)</label>
+                <select
+                  id="form_peca_estoque"
+                  value={laudoData.peca_id}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setLaudoData(prev => ({ ...prev, peca_id: val }));
+                    const selected = pecasEstoque.find(p => p.id === val);
+                    if (selected) {
+                      setLaudoData(prev => ({
+                        ...prev,
+                        diagnostico_tecnico: prev.diagnostico_tecnico 
+                          ? `${prev.diagnostico_tecnico}\n- Substituído: ${selected.item_nome}`
+                          : `- Substituído: ${selected.item_nome}`
+                      }));
+                    }
+                  }}
+                  className="w-full px-3 py-2 mt-1 border rounded-lg text-sm bg-white outline-none border-slate-200"
+                >
+                  <option value="">-- Nenhuma (Lançar valor manual) --</option>
+                  {pecasEstoque.map((p) => (
+                    <option key={p.id} value={p.id} disabled={p.quantidade_atual <= 0}>
+                      {p.item_nome} ({p.quantidade_atual} un. disp.)
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label htmlFor="form_diagnostico" className="block text-xs font-bold text-slate-500 uppercase">Diagnóstico Técnico / Peças Trocadas</label>
+                <textarea id="form_diagnostico" value={laudoData.diagnostico_tecnico} onChange={(e) => setLaudoData(prev => ({ ...prev, diagnostico_tecnico: e.target.value }))} rows={3} className="w-full px-3 py-2 mt-1 border rounded-lg text-sm outline-none resize-none" />
               </div>
               <div className="grid grid-cols-2 gap-4 p-3 bg-slate-50 rounded-xl border border-slate-200/60">
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase">Custo de Peças (R$)</label>
-                  <input type="number" step="0.01" value={laudoData.valor_pecas} onChange={(e) => setLaudoData(prev => ({ ...prev, valor_pecas: e.target.value }))} className="w-full px-3 py-1.5 mt-1 border rounded-lg text-sm bg-white outline-none" />
+                  <label htmlFor="form_custo_pecas" className="block text-xs font-bold text-slate-500 uppercase">Custo de Peças (R$)</label>
+                  <input id="form_custo_pecas" type="number" step="0.01" value={laudoData.valor_pecas} onChange={(e) => setLaudoData(prev => ({ ...prev, valor_pecas: e.target.value }))} className="w-full px-3 py-1.5 mt-1 border rounded-lg text-sm bg-white outline-none" />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase">Mão de Obra (R$)</label>
-                  <input type="number" step="0.01" value={laudoData.valor_mao_de_obra} onChange={(e) => setLaudoData(prev => ({ ...prev, valor_mao_de_obra: e.target.value }))} className="w-full px-3 py-1.5 mt-1 border rounded-lg text-sm bg-white outline-none" />
+                  <label htmlFor="form_mao_obra" className="block text-xs font-bold text-slate-500 uppercase">Mão de Obra (R$)</label>
+                  <input id="form_mao_obra" type="number" step="0.01" value={laudoData.valor_mao_de_obra} onChange={(e) => setLaudoData(prev => ({ ...prev, valor_mao_de_obra: e.target.value }))} className="w-full px-3 py-1.5 mt-1 border rounded-lg text-sm bg-white outline-none" />
                 </div>
               </div>
               <div className="flex justify-end space-x-3 border-t pt-2">

@@ -48,10 +48,6 @@ const ClientList: React.FC = () => {
   const [deleteTarget, setDeleteTarget] = useState<Cliente | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  useEffect(() => {
-    fetchClientes();
-  }, []);
-
   const fetchClientes = async () => {
     try {
       setLoading(true);
@@ -59,8 +55,9 @@ const ClientList: React.FC = () => {
       const { data, error } = await supabase.from('tb_clientes').select('*').order('nome', { ascending: true });
       if (error) throw error;
       setClientes(data || []);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+      setError(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -76,12 +73,17 @@ const ClientList: React.FC = () => {
         .order('nome_local', { ascending: true });
       if (error) throw error;
       setLocais(data || []);
-    } catch (err: any) {
-      console.error('Erro ao buscar locais:', err.message);
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+      console.error('Erro ao buscar locais:', errorMsg);
     } finally {
       setLoadingLocais(false);
     }
   };
+
+  useEffect(() => {
+    fetchClientes();
+  }, []);
 
   const handleOpenLocaisModal = (cliente: Cliente) => {
     setSelectedCliente(cliente);
@@ -148,8 +150,9 @@ const ClientList: React.FC = () => {
       setEditingCliente(null);
       setFormData({ ...INITIAL_FORM });
       fetchClientes();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+      setError(errorMsg);
     } finally {
       setIsSaving(false);
     }
@@ -164,8 +167,9 @@ const ClientList: React.FC = () => {
       if (error) throw error;
       setDeleteTarget(null);
       fetchClientes();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+      setError(errorMsg);
     } finally {
       setIsDeleting(false);
     }
@@ -181,8 +185,9 @@ const ClientList: React.FC = () => {
       if (error) throw error;
       setLocalFormData({ ...INITIAL_LOCAL_FORM });
       fetchLocais(selectedCliente.id);
-    } catch (err: any) {
-      alert('Erro ao salvar local: ' + err.message);
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+      alert('Erro ao salvar local: ' + errorMsg);
     }
   };
 
@@ -193,8 +198,9 @@ const ClientList: React.FC = () => {
       const { error } = await supabase.from('tb_locais_instalacao').delete().eq('id', localId);
       if (error) throw error;
       fetchLocais(selectedCliente.id);
-    } catch (err: any) {
-      alert('Erro ao excluir local: ' + err.message);
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+      alert('Erro ao excluir local: ' + errorMsg);
     }
   };
 

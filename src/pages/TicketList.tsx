@@ -33,22 +33,6 @@ const TicketList: React.FC = () => {
     cliente_id: '', local_id: '', equipamento_id: '', descricao_problema: '', prioridade: 'Média'
   });
 
-  useEffect(() => {
-    fetchChamados();
-    fetchClientes();
-  }, []);
-
-  // Monitora a troca de cliente para buscar as filiais e impressoras dele em tempo real
-  useEffect(() => {
-    if (!formData.cliente_id) {
-      setLocais([]);
-      setEquipamentos([]);
-      setFormData(prev => ({ ...prev, local_id: '', equipamento_id: '' }));
-      return;
-    }
-    fetchDadosDoCliente(formData.cliente_id);
-  }, [formData.cliente_id]);
-
   const fetchChamados = async () => {
     try {
       setLoading(true);
@@ -59,8 +43,9 @@ const TicketList: React.FC = () => {
 
       if (error) throw error;
       setChamados(data || []);
-    } catch (err: any) {
-      alert(err.message);
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+      alert(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -81,9 +66,23 @@ const TicketList: React.FC = () => {
     setEquipamentos(equipData || []);
   };
 
+  useEffect(() => {
+    fetchChamados();
+    fetchClientes();
+  }, []);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    if (name === 'cliente_id') {
+      if (!value) {
+        setLocais([]);
+        setEquipamentos([]);
+        setFormData(prev => ({ ...prev, local_id: '', equipamento_id: '' }));
+      } else {
+        fetchDadosDoCliente(value);
+      }
+    }
   };
 
   const handleAbrirChamado = async (e: React.FormEvent) => {
@@ -101,8 +100,9 @@ const TicketList: React.FC = () => {
       setIsModalOpen(false);
       setFormData({ cliente_id: '', local_id: '', equipamento_id: '', descricao_problema: '', prioridade: 'Média' });
       fetchChamados();
-    } catch (err: any) {
-      alert(err.message);
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+      alert(errorMsg);
     }
   };
 
@@ -122,8 +122,9 @@ const TicketList: React.FC = () => {
       setSelectedChamado(null);
       setSolucaoText('');
       fetchChamados();
-    } catch (err: any) {
-      alert(err.message);
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+      alert(errorMsg);
     }
   };
 
@@ -135,7 +136,12 @@ const TicketList: React.FC = () => {
           <p className="text-slate-500 text-xs mt-0.5">Controle de manutenção corretiva, preventiva e suporte técnico.</p>
         </div>
         <button 
-          onClick={() => setIsModalOpen(true)}
+          onClick={() => {
+            setFormData({ cliente_id: '', local_id: '', equipamento_id: '', descricao_problema: '', prioridade: 'Média' });
+            setLocais([]);
+            setEquipamentos([]);
+            setIsModalOpen(true);
+          }}
           className="px-4 py-2 text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-sm font-medium text-sm rounded-lg"
         >
           + Abrir Chamado (OS)
