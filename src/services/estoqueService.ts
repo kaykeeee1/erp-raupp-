@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 export interface EstoqueItem {
   id: string;
   item_nome: string;
-  categoria: 'Toner' | 'Peça' | 'Cilindro';
+  categoria: 'Toner' | 'Peça' | 'Cilindro' | 'Unidade de Fusor' | 'Unidade de Imagem';
   quantidade_atual: number;
   quantidade_minima: number;
   modelo_compativel?: string;

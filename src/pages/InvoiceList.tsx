@@ -232,7 +232,7 @@ const InvoiceList: React.FC = () => {
       )}
 
       {loading ? (
-        <p className="p-6 text-slate-400 text-sm">Buscando histórico fiscal...</p>
+        <p className="p-6 text-slate-400 text-sm">Buscando histórico fiscal…</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
@@ -272,7 +272,7 @@ const InvoiceList: React.FC = () => {
                       <span className="text-slate-400 italic">Na franquia</span>
                     )}
                   </td>
-                  <td className="px-6 py-4 font-bold text-slate-900">
+                  <td className="px-6 py-4 font-bold text-slate-900 tabular-nums">
                     R$ {nota.valor_bruto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </td>
                   <td className="px-6 py-4 text-right">

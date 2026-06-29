@@ -180,10 +180,10 @@ const FinanceList: React.FC = () => {
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
             <input
               type="text"
-              placeholder="Buscar lançamento ou cliente..."
+              placeholder="Buscar lançamento ou cliente…"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm bg-white outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 transition-all"
+              className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm bg-white outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 transition-colors"
             />
           </div>
           <select
@@ -210,7 +210,7 @@ const FinanceList: React.FC = () => {
 
       {/* LISTA FINANCEIRA */}
       {loading ? (
-        <p className="p-6 text-slate-400 text-sm">Buscando lançamentos...</p>
+        <p className="p-6 text-slate-400 text-sm">Buscando lançamentos…</p>
       ) : filteredLancamentos.length === 0 ? (
         <div className="p-12 text-center border border-dashed border-slate-200 rounded-xl">
           <DollarSign className="w-8 h-8 text-slate-300 mx-auto mb-2" />
@@ -246,7 +246,7 @@ const FinanceList: React.FC = () => {
                       {item.tipo}
                     </span>
                   </td>
-                  <td className={`px-6 py-4 font-bold ${item.tipo === 'Receita' ? 'text-emerald-600' : 'text-orange-600'}`}>
+                  <td className={`px-6 py-4 font-bold tabular-nums ${item.tipo === 'Receita' ? 'text-emerald-600' : 'text-orange-600'}`}>
                     R$ {item.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </td>
                   <td className="px-6 py-4">

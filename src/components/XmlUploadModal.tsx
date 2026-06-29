@@ -187,8 +187,8 @@ const XmlUploadModal: React.FC<XmlUploadModalProps> = ({ isOpen, onClose, onSucc
                               {item.categoria}
                             </span>
                           </td>
-                          <td className="px-4 py-2 text-right font-mono font-bold">{item.quantidade}</td>
-                          <td className="px-4 py-2 text-right font-mono text-slate-600">
+                          <td className="px-4 py-2 text-right font-mono font-bold tabular-nums">{item.quantidade}</td>
+                          <td className="px-4 py-2 text-right font-mono text-slate-600 tabular-nums">
                             R$ {item.valor_unitario.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                           </td>
                           <td className="px-4 py-2 font-mono text-slate-400">{item.codigo_barras || 'Sem código'}</td>

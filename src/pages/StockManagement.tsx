@@ -10,7 +10,7 @@ const StockManagement: React.FC = () => {
 
   // Filtros e busca
   const [searchTerm, setSearchTerm] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState<'Todos' | 'Toner' | 'Peça' | 'Cilindro'>('Todos');
+  const [categoryFilter, setCategoryFilter] = useState<'Todos' | 'Toner' | 'Peça' | 'Cilindro' | 'Unidade de Fusor' | 'Unidade de Imagem'>('Todos');
 
   // Controle de Bipagem USB
   const [barcodeInput, setBarcodeInput] = useState('');
@@ -22,7 +22,7 @@ const StockManagement: React.FC = () => {
   const [editingItem, setEditingItem] = useState<EstoqueItem | null>(null);
   const [formData, setFormData] = useState({
     item_nome: '',
-    categoria: 'Toner' as 'Toner' | 'Peça' | 'Cilindro',
+    categoria: 'Toner' as 'Toner' | 'Peça' | 'Cilindro' | 'Unidade de Fusor' | 'Unidade de Imagem',
     quantidade_atual: 0,
     quantidade_minima: 0,
     modelo_compativel: '',
@@ -255,7 +255,7 @@ const StockManagement: React.FC = () => {
           <input
             id="stock-search-input"
             type="text"
-            placeholder="Buscar por nome, compatibilidade ou EAN..."
+            placeholder="Buscar por nome, compatibilidade ou EAN…"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full max-w-md px-4 py-2 border border-slate-200 rounded-lg text-sm bg-white outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 transition-all"
@@ -263,12 +263,14 @@ const StockManagement: React.FC = () => {
           <select
             id="stock-category-filter"
             value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value as 'Todos' | 'Toner' | 'Peça' | 'Cilindro')}
-            className="px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white outline-none focus:border-blue-500 transition-all"
+            onChange={(e) => setCategoryFilter(e.target.value as any)}
+            className="px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white outline-none focus:border-blue-500 transition-all font-medium text-slate-700"
           >
             <option value="Todos">Todas Categorias</option>
             <option value="Toner">Toners</option>
             <option value="Cilindro">Cilindros</option>
+            <option value="Unidade de Fusor">Unidades de Fusor</option>
+            <option value="Unidade de Imagem">Unidades de Imagem</option>
             <option value="Peça">Peças</option>
           </select>
         </div>
@@ -280,7 +282,7 @@ const StockManagement: React.FC = () => {
             <input
               id="stock-barcode-input"
               type="text"
-              placeholder="Bipar EAN..."
+              placeholder="Bipar EAN…"
               value={barcodeInput}
               onChange={(e) => setBarcodeInput(e.target.value)}
               className="px-3 py-2 border border-slate-200 rounded-lg text-sm bg-slate-50 outline-none focus:bg-white focus:border-blue-500 transition-all font-mono text-center tracking-widest"
@@ -324,7 +326,7 @@ const StockManagement: React.FC = () => {
 
       {/* DATA TABLE */}
       {loading ? (
-        <p className="p-8 text-slate-400 text-sm text-center">Buscando inventário de suprimentos...</p>
+        <p className="p-8 text-slate-400 text-sm text-center">Buscando inventário de suprimentos…</p>
       ) : filteredStock.length === 0 ? (
         <p className="p-12 text-slate-400 text-sm text-center border-2 border-dashed border-slate-200 rounded-xl bg-slate-50/30">
           Nenhum insumo encontrado no estoque com os filtros aplicados.
@@ -349,7 +351,7 @@ const StockManagement: React.FC = () => {
                   <tr key={item.id} className="hover:bg-slate-50/40 transition-colors">
                     <td className="px-6 py-4">
                       <span className="font-bold text-slate-900 block">{item.item_nome}</span>
-                      <span className="text-[10px] text-slate-400 font-mono">Minimo: {item.quantidade_minima} un.</span>
+                      <span className="text-[10px] text-slate-400 font-mono tabular-nums">Minimo: {item.quantidade_minima} un.</span>
                     </td>
                     <td className="px-6 py-4">
                       <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${item.categoria === 'Toner'
@@ -363,7 +365,7 @@ const StockManagement: React.FC = () => {
                       {item.modelo_compativel || <span className="italic text-slate-400">Não informado</span>}
                     </td>
                     <td className="px-6 py-4 text-center">
-                      <span className={`inline-block font-extrabold px-3 py-1 rounded text-sm ${isCritical
+                      <span className={`inline-block font-extrabold px-3 py-1 rounded text-sm tabular-nums ${isCritical
                           ? 'bg-rose-50 text-rose-700 border border-rose-100 animate-pulse'
                           : 'bg-slate-100 text-slate-800'
                         }`}>
@@ -448,10 +450,12 @@ const StockManagement: React.FC = () => {
                     value={formData.categoria}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-3 py-2 mt-1 border border-slate-200 rounded-lg text-sm bg-white outline-none focus:border-blue-500 transition-all"
+                    className="w-full px-3 py-2 mt-1 border border-slate-200 rounded-lg text-sm bg-white outline-none focus:border-blue-500 transition-all font-medium text-slate-700"
                   >
                     <option value="Toner">Toner</option>
                     <option value="Cilindro">Cilindro</option>
+                    <option value="Unidade de Fusor">Unidade de Fusor</option>
+                    <option value="Unidade de Imagem">Unidade de Imagem</option>
                     <option value="Peça">Peça</option>
                   </select>
                 </div>

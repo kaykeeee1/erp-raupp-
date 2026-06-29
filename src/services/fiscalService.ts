@@ -6,7 +6,7 @@ export interface XmlInvoiceItem {
   codigo_barras: string;
   quantidade: number;
   valor_unitario: number;
-  categoria: 'Toner' | 'Peça' | 'Cilindro';
+  categoria: 'Toner' | 'Peça' | 'Cilindro' | 'Unidade de Fusor' | 'Unidade de Imagem';
 }
 
 export interface ParsedInvoiceXml {
@@ -76,10 +76,14 @@ export const fiscalService = {
       const val = parseFloat(vUnCom);
 
       // Descobre a categoria baseando-se no nome do produto
-      let categoria: 'Toner' | 'Peça' | 'Cilindro' = 'Peça';
+      let categoria: 'Toner' | 'Peça' | 'Cilindro' | 'Unidade de Fusor' | 'Unidade de Imagem' = 'Peça';
       const lowercaseName = xProd.toLowerCase();
       if (lowercaseName.includes('toner') || lowercaseName.includes('cartucho de tinta')) {
         categoria = 'Toner';
+      } else if (lowercaseName.includes('fusor') || lowercaseName.includes('fuser')) {
+        categoria = 'Unidade de Fusor';
+      } else if (lowercaseName.includes('imagem') || lowercaseName.includes('image')) {
+        categoria = 'Unidade de Imagem';
       } else if (lowercaseName.includes('cilindro') || lowercaseName.includes('drum') || lowercaseName.includes('fotocondutor')) {
         categoria = 'Cilindro';
       }
