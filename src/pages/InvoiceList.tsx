@@ -18,7 +18,7 @@ interface NotaFiscal {
   };
   tb_clientes: {
     razao_social: string;
-    cnpj: string;
+    cpf_cnpj: string;
     valor_franquia: number;
     franquia_paginas: number;
     valor_clique_excedente: number;
@@ -84,7 +84,7 @@ const InvoiceList: React.FC = () => {
       setLoading(true);
       const { data, error } = await supabase
         .from('tb_notas_fiscais')
-        .select('*, tb_clientes(razao_social, cnpj, valor_franquia, franquia_paginas, valor_clique_excedente)')
+        .select('*, tb_clientes(razao_social, cpf_cnpj, valor_franquia, franquia_paginas, valor_clique_excedente)')
         .order('criado_em', { ascending: false });
 
       if (error) throw error;
@@ -330,7 +330,7 @@ const InvoiceList: React.FC = () => {
                 </div>
                 <div>
                   <span className="text-slate-400 font-bold uppercase text-[9px] block">CNPJ / Inscrição</span>
-                  <span className="font-mono font-semibold text-slate-700">{invoiceToPrint.tb_clientes?.cnpj || 'Não Informado'}</span>
+                  <span className="font-mono font-semibold text-slate-700">{invoiceToPrint.tb_clientes?.cpf_cnpj || 'Não Informado'}</span>
                 </div>
               </div>
 

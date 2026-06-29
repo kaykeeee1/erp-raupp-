@@ -13,9 +13,9 @@ interface OSBancada {
   valor_pecas: number;
   valor_mao_de_obra: number;
   valor_total: number;
-  tecnico_responsavel: string | null; // <-- Campo adicionado na interface
+  tecnico_responsavel: string | null;
   criado_em: string;
-  tb_clientes: { razao_social: string; cnpj: string } | null;
+  tb_clientes: { razao_social: string; cpf_cnpj: string } | null; // CORREÇÃO AQUI
   tb_equipamentos: { modelo: string; numero_serie: string } | null;
 }
 
@@ -64,7 +64,8 @@ const MaintenanceList: React.FC = () => {
       setLoading(true);
       const { data, error } = await supabase
         .from('tb_os_bancada')
-        .select('*, tb_clientes(razao_social, cnpj), tb_equipamentos(modelo, numero_serie)')
+        // CORREÇÃO: Trocado 'cnpj' por 'cpf_cnpj' no select
+        .select('*, tb_clientes(razao_social, cpf_cnpj), tb_equipamentos(modelo, numero_serie)')
         .order('criado_em', { ascending: false });
       if (error) throw error;
       setOrdens(data || []);
@@ -98,9 +99,7 @@ const MaintenanceList: React.FC = () => {
   const handleAbrirOS = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      // Busca a informação do usuário logado na sessão ativa do Supabase
       const { data: { user } } = await supabase.auth.getUser();
-      // Prioriza o nome fantasia configurado no metadata ou o próprio e-mail de login
       const operador = user?.user_metadata?.nome || user?.email || 'Técnico Interno';
 
       const payload = {
@@ -111,7 +110,7 @@ const MaintenanceList: React.FC = () => {
         modelo: isAvulso ? formData.modelo : null,
         numero_serie: isAvulso ? formData.numero_serie : null,
         defeito_relatado: formData.defeito_relatado,
-        tecnico_responsavel: operador, // <-- Gravando a pessoa logada
+        tecnico_responsavel: operador,
         status: 'Orçamento'
       };
 
@@ -234,7 +233,6 @@ const MaintenanceList: React.FC = () => {
                       </div>
                     )}
                   </td>
-                  {/* EXIBIÇÃO DO OPERADOR NA TABELA */}
                   <td className="px-6 py-4 text-xs font-medium text-slate-500 truncate max-w-[140px]" title={os.tecnico_responsavel || ''}>
                     {os.tecnico_responsavel || 'Não Informado'}
                   </td>
@@ -405,7 +403,8 @@ const MaintenanceList: React.FC = () => {
                 <div>
                   <span className="text-slate-400 font-bold uppercase text-[9px] block">Cliente / Proprietário</span>
                   <span className="font-bold text-slate-800 text-sm">{osToPrint.tb_clientes?.razao_social}</span>
-                  <span className="block text-[11px] text-slate-500 font-mono mt-0.5">CNPJ: {osToPrint.tb_clientes?.cnpj}</span>
+                  {/* CORREÇÃO AQUI NO LAYOUT DE IMPRESSÃO */}
+                  <span className="block text-[11px] text-slate-500 font-mono mt-0.5">CNPJ/CPF: {osToPrint.tb_clientes?.cpf_cnpj}</span>
                 </div>
                 <div>
                   <span className="text-slate-400 font-bold uppercase text-[9px] block">Equipamento / Ativo Identificado</span>
@@ -462,7 +461,6 @@ const MaintenanceList: React.FC = () => {
                 </div>
               </div>
 
-              {/* ASSINATURA DINÂMICA COMA IDENTIFICAÇÃO DO TÉCNICO LOGADO */}
               <div className="mt-16 grid grid-cols-2 gap-12 text-center text-xs">
                 <div className="space-y-1">
                   <div className="border-t border-slate-400 mx-4 pt-2 font-bold text-slate-800 truncate">

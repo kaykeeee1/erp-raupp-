@@ -6,15 +6,17 @@ interface Equipamento {
   marca: string;
   modelo: string;
   numero_serie: string;
-  ip_rede: string;
+  ip: string; // Corrigido de ip_rede para ip
   contador_inicial: number;
   status: string;
+  cliente_id: string | null;
+  local_instalacao_id: string | null; // Corrigido de local_id para local_instalacao_id
   tb_clientes: {
     razao_social: string;
   } | null;
   tb_locais_instalacao: {
     nome_local: string;
-  } | null; // <-- 1. VÍNCULO DO LOCAL ADICIONADO
+  } | null;
 }
 
 interface ClienteDropdown {
@@ -27,38 +29,44 @@ interface LocalDropdown {
   nome_local: string;
 }
 
+const INITIAL_FORM = {
+  marca: '',
+  modelo: '',
+  numero_serie: '',
+  ip: '',
+  contador_inicial: 0,
+  status: 'Estoque', // Corrigido para corresponder ao padrão do banco
+  cliente_id: '',
+  local_instalacao_id: '',
+};
+
 const EquipmentList: React.FC = () => {
   const [equipamentos, setEquipamentos] = useState<Equipamento[]>([]);
   const [clientes, setClientes] = useState<ClienteDropdown[]>([]);
-  const [locais, setLocais] = useState<LocalDropdown[]>([]); // Dropdown dinâmico de locais
+  const [locais, setLocais] = useState<LocalDropdown[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingLocais, setLoadingLocais] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Estados para o Modal de Cadastro
+  // Estados para o Modal de Cadastro/Edição
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [formData, setFormData] = useState({
-    marca: '',
-    modelo: '',
-    numero_serie: '',
-    ip_rede: '',
-    contador_inicial: 0,
-    status: 'Em Estoque',
-    cliente_id: '',
-    local_id: '', // <-- 2. CAMPO DO LOCAL NO FORMULÁRIO
-  });
+  const [editingEquip, setEditingEquip] = useState<Equipamento | null>(null);
+  const [formData, setFormData] = useState({ ...INITIAL_FORM });
+
+  // Confirmação de exclusão
+  const [deleteTarget, setDeleteTarget] = useState<Equipamento | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     fetchEquipamentos();
     fetchClientes();
   }, []);
 
-  // Escuta mudanças no cliente selecionado para buscar os locais dele em tempo real
   useEffect(() => {
     if (!formData.cliente_id) {
       setLocais([]);
-      setFormData(prev => ({ ...prev, local_id: '' }));
+      setFormData(prev => ({ ...prev, local_instalacao_id: '' }));
       return;
     }
     fetchLocaisDoCliente(formData.cliente_id);
@@ -67,13 +75,16 @@ const EquipmentList: React.FC = () => {
   const fetchEquipamentos = async () => {
     try {
       setLoading(true);
-      // 3. JOIN DUPLO: Trazemos a razão social do cliente E o nome do local de instalação
-      const { data, error } = await supabase
+      const { data, error: sbError } = await supabase
         .from('tb_equipamentos')
-        .select('*, tb_clientes(razao_social), tb_locais_instalacao(nome_local)')
-        .order('criado_em', { ascending: false });
+        .select(`
+          *,
+          tb_clientes (razao_social),
+          tb_locais_instalacao!local_instalacao_id (nome_local)
+        `)
+        .order('modelo', { ascending: true });
 
-      if (error) throw error;
+      if (sbError) throw sbError;
       setEquipamentos(data || []);
     } catch (err: any) {
       setError(err.message);
@@ -99,7 +110,6 @@ const EquipmentList: React.FC = () => {
         .select('id, nome_local')
         .eq('cliente_id', clienteId)
         .order('nome_local', { ascending: true });
-      
       setLocais(data || []);
     } catch (err: any) {
       console.error(err.message);
@@ -113,37 +123,82 @@ const EquipmentList: React.FC = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleCreateEquipamento = async (e: React.FormEvent) => {
+  // ---- CRUD: CREATE ----
+  const handleOpenCreateModal = () => {
+    setEditingEquip(null);
+    setFormData({ ...INITIAL_FORM });
+    setError(null);
+    setIsModalOpen(true);
+  };
+
+  // ---- CRUD: EDIT ----
+  const handleOpenEditModal = (equip: Equipamento) => {
+    setEditingEquip(equip);
+    setFormData({
+      marca: equip.marca,
+      modelo: equip.modelo,
+      numero_serie: equip.numero_serie,
+      ip: equip.ip || '',
+      contador_inicial: equip.contador_inicial,
+      status: equip.status,
+      cliente_id: equip.cliente_id || '',
+      local_instalacao_id: equip.local_instalacao_id || '',
+    });
+    setError(null);
+    setIsModalOpen(true);
+  };
+
+  const handleSubmitEquipamento = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
     setError(null);
 
-    // Ajuste para mandar null caso os campos fiquem vazios (Equipamento em Estoque)
+    // Mapeamento EXATO para o banco de dados
     const payload = {
       marca: formData.marca,
       modelo: formData.modelo,
       numero_serie: formData.numero_serie,
-      ip_rede: formData.ip_rede || null,
+      ip: formData.ip || null,
       contador_inicial: Number(formData.contador_inicial),
       status: formData.status,
       cliente_id: formData.cliente_id === '' ? null : formData.cliente_id,
-      local_id: formData.local_id === '' ? null : formData.local_id,
+      local_instalacao_id: formData.local_instalacao_id === '' ? null : formData.local_instalacao_id,
     };
 
     try {
-      const { error } = await supabase.from('tb_equipamentos').insert([payload]);
-      if (error) throw error;
+      if (editingEquip) {
+        const { error } = await supabase.from('tb_equipamentos').update(payload).eq('id', editingEquip.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('tb_equipamentos').insert([payload]);
+        if (error) throw error;
+      }
 
-      setFormData({
-        marca: '', modelo: '', numero_serie: '', ip_rede: '',
-        contador_inicial: 0, status: 'Em Estoque', cliente_id: '', local_id: '',
-      });
+      setFormData({ ...INITIAL_FORM });
+      setEditingEquip(null);
       setIsModalOpen(false);
       fetchEquipamentos();
     } catch (err: any) {
       setError(err.message || 'Erro ao salvar equipamento.');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  // ---- CRUD: DELETE ----
+  const handleDeleteEquipamento = async () => {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
+    setError(null);
+    try {
+      const { error } = await supabase.from('tb_equipamentos').delete().eq('id', deleteTarget.id);
+      if (error) throw error;
+      setDeleteTarget(null);
+      fetchEquipamentos();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -154,15 +209,15 @@ const EquipmentList: React.FC = () => {
           <h3 className="text-lg font-bold text-slate-800">Parque de Máquinas</h3>
           <p className="text-slate-500 text-xs mt-0.5">Rastreamento de ativos e alocações geográficas/setoriais.</p>
         </div>
-        <button 
-          onClick={() => setIsModalOpen(true)}
+        <button
+          onClick={handleOpenCreateModal}
           className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors shadow-sm font-medium text-sm"
         >
           + Novo Equipamento
         </button>
       </div>
 
-      {error && <div className="p-4 mb-4 text-red-700 bg-red-100 rounded-lg text-sm">{error}</div>}
+      {error && <div className="p-4 mb-4 text-red-700 bg-red-100 rounded-lg text-sm border border-red-200">⚠️ Erro: {error}</div>}
 
       {loading ? (
         <p className="p-6 text-slate-400 text-sm">Mapeando parque tecnológico...</p>
@@ -175,7 +230,7 @@ const EquipmentList: React.FC = () => {
                 <th className="px-6 py-3">Nº de Série / IP</th>
                 <th className="px-6 py-3">Cliente / Local de Instalação</th>
                 <th className="px-6 py-3">Status</th>
-                <th className="px-6 py-3 text-right">Contador Inicial</th>
+                <th className="px-6 py-3 text-right">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-sm text-slate-700">
@@ -192,13 +247,12 @@ const EquipmentList: React.FC = () => {
                     </td>
                     <td className="px-6 py-4">
                       <div className="font-mono text-slate-600 font-medium">{equip.numero_serie}</div>
-                      <div className="text-xs text-slate-400 font-mono">{equip.ip_rede || 'Sem IP'}</div>
+                      <div className="text-xs text-slate-400 font-mono">{equip.ip || 'Sem IP'}</div>
                     </td>
                     <td className="px-6 py-4 text-slate-600">
                       {equip.tb_clientes?.razao_social ? (
                         <div>
                           <span className="text-slate-900 font-semibold">{equip.tb_clientes.razao_social}</span>
-                          {/* 4. EXIBE O LOCAL EXATO DO SETOR/FILIAL NA TABELA */}
                           <span className="block text-xs text-blue-600 font-medium mt-0.5">
                             📍 {equip.tb_locais_instalacao?.nome_local || 'Ponto não especificado'}
                           </span>
@@ -215,8 +269,21 @@ const EquipmentList: React.FC = () => {
                         {equip.status}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-right font-bold text-slate-800 font-mono text-xs">
-                      {equip.contador_inicial.toLocaleString()} pág.
+                    <td className="px-6 py-4 text-right space-x-1.5">
+                      <button
+                        onClick={() => handleOpenEditModal(equip)}
+                        className="px-2.5 py-1.5 bg-amber-50 text-amber-700 hover:bg-amber-100 rounded-md text-xs font-semibold border border-amber-200 transition-all"
+                        title="Editar equipamento"
+                      >
+                        ✏️ Editar
+                      </button>
+                      <button
+                        onClick={() => setDeleteTarget(equip)}
+                        className="px-2.5 py-1.5 bg-red-50 text-red-700 hover:bg-red-100 rounded-md text-xs font-semibold border border-red-200 transition-all"
+                        title="Excluir equipamento"
+                      >
+                        🗑️ Excluir
+                      </button>
                     </td>
                   </tr>
                 ))
@@ -226,13 +293,15 @@ const EquipmentList: React.FC = () => {
         </div>
       )}
 
-      {/* MODAL DE CADASTRO ATUALIZADO COM SELEÇÃO DE LOCAL */}
+      {/* MODAL DE CADASTRO/EDIÇÃO */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
           <div className="bg-white rounded-xl shadow-xl border border-slate-200 w-full max-w-lg p-6 space-y-4">
-            <h3 className="text-lg font-bold text-slate-800 border-b pb-2">Cadastrar Equipamento</h3>
+            <h3 className="text-lg font-bold text-slate-800 border-b pb-2">
+              {editingEquip ? 'Editar Equipamento' : 'Cadastrar Equipamento'}
+            </h3>
 
-            <form onSubmit={handleCreateEquipamento} className="space-y-4">
+            <form onSubmit={handleSubmitEquipamento} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase">Marca *</label>
@@ -251,7 +320,7 @@ const EquipmentList: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase">IP de Rede</label>
-                  <input type="text" name="ip_rede" value={formData.ip_rede} onChange={handleInputChange} className="w-full px-3 py-2 mt-1 border rounded-lg text-sm outline-none border-slate-200" placeholder="192.168.1.50" />
+                  <input type="text" name="ip" value={formData.ip} onChange={handleInputChange} className="w-full px-3 py-2 mt-1 border rounded-lg text-sm outline-none border-slate-200" placeholder="192.168.1.50" />
                 </div>
               </div>
 
@@ -263,14 +332,13 @@ const EquipmentList: React.FC = () => {
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase">Status Operacional</label>
                   <select name="status" value={formData.status} onChange={handleInputChange} className="w-full px-3 py-2 mt-1 border rounded-lg text-sm bg-white outline-none border-slate-200">
-                    <option value="Em Estoque">Em Estoque</option>
+                    <option value="Estoque">Em Estoque</option>
                     <option value="Em Campo">Em Campo</option>
                     <option value="Manutenção">Manutenção</option>
                   </select>
                 </div>
               </div>
 
-              {/* DIVISÃO DE ALOCAÇÃO GEOGRÁFICA */}
               <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
                 <div>
                   <label className="block text-xs font-bold text-slate-600 uppercase">Vincular a um Cliente</label>
@@ -282,15 +350,13 @@ const EquipmentList: React.FC = () => {
                   </select>
                 </div>
 
-                {/* 5. INPUT DINÂMICO DE LOCAIS REATIVOS */}
                 {formData.cliente_id && (
-                  <div className="animate-fade-in">
-                    <label className="block text-xs font-bold text-slate-600 uppercase">Ponto de Instalação / Setor *</label>
-                    <select 
-                      name="local_id" 
-                      value={formData.local_id} 
-                      onChange={handleInputChange} 
-                      required={formData.status === 'Em Campo'} // Obriga a ter local se a máquina for pro campo
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 uppercase">Ponto de Instalação / Setor</label>
+                    <select
+                      name="local_instalacao_id"
+                      value={formData.local_instalacao_id}
+                      onChange={handleInputChange}
                       className="w-full px-3 py-2 mt-1 border rounded-lg text-sm bg-white outline-none border-slate-200"
                     >
                       <option value="">-- Selecione o Local deste Cliente --</option>
@@ -309,12 +375,35 @@ const EquipmentList: React.FC = () => {
               </div>
 
               <div className="flex justify-end space-x-3 pt-2 border-t">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-sm font-medium text-slate-500 bg-slate-100 rounded-lg">Cancelar</button>
+                <button type="button" onClick={() => { setIsModalOpen(false); setEditingEquip(null); }} className="px-4 py-2 text-sm font-medium text-slate-500 bg-slate-100 rounded-lg">Cancelar</button>
                 <button type="submit" disabled={isSaving} className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg disabled:opacity-50">
-                  {isSaving ? 'Gravando...' : 'Salvar Equipamento'}
+                  {isSaving ? 'Gravando...' : editingEquip ? 'Atualizar Equipamento' : 'Salvar Equipamento'}
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE CONFIRMAÇÃO DE EXCLUSÃO */}
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-xl shadow-xl border border-slate-200 w-full max-w-md p-6 space-y-4">
+            <div className="text-center">
+              <div className="text-4xl mb-2">⚠️</div>
+              <h3 className="text-lg font-bold text-slate-800">Excluir Equipamento</h3>
+              <p className="text-sm text-slate-500 mt-2">
+                Tem certeza que deseja excluir <strong className="text-slate-700">{deleteTarget.modelo}</strong>?
+              </p>
+              <p className="text-xs text-slate-400">S/N: {deleteTarget.numero_serie}</p>
+              <p className="text-xs text-red-500 mt-1">Esta ação não pode ser desfeita.</p>
+            </div>
+            <div className="flex justify-end space-x-3 pt-2 border-t">
+              <button type="button" onClick={() => setDeleteTarget(null)} className="px-4 py-2 text-sm font-medium text-slate-500 bg-slate-100 rounded-lg">Cancelar</button>
+              <button type="button" onClick={handleDeleteEquipamento} disabled={isDeleting} className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50">
+                {isDeleting ? 'Excluindo...' : 'Sim, Excluir'}
+              </button>
+            </div>
           </div>
         </div>
       )}
