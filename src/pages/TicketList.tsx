@@ -130,7 +130,7 @@ const TicketList: React.FC = () => {
 
   return (
     <div className="p-6">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
         <div>
           <h3 className="text-lg font-bold text-slate-800">Chamados Técnicos & OS</h3>
           <p className="text-slate-500 text-xs mt-0.5">Controle de manutenção corretiva, preventiva e suporte técnico.</p>
@@ -220,8 +220,8 @@ const TicketList: React.FC = () => {
 
       {/* MODAL 1: ABERTURA DE CHAMADO */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6 space-y-4 border border-slate-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 p-6 space-y-4 border border-slate-200 max-h-[90vh] overflow-y-auto">
             <h3 className="text-base font-bold text-slate-800 border-b pb-2">Abertura de Chamado Técnico</h3>
             <form onSubmit={handleAbrirChamado} className="space-y-4">
               <div>
@@ -232,7 +232,7 @@ const TicketList: React.FC = () => {
                 </select>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase">Local / Filial</label>
                   <select name="local_id" value={formData.local_id} onChange={handleInputChange} disabled={!formData.cliente_id} className="w-full px-3 py-2 mt-1 border rounded-lg text-sm bg-white outline-none border-slate-200 disabled:opacity-50">

@@ -263,7 +263,7 @@ const StockManagement: React.FC = () => {
           <select
             id="stock-category-filter"
             value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value as any)}
+            onChange={(e) => setCategoryFilter(e.target.value as 'Todos' | 'Toner' | 'Peça' | 'Cilindro' | 'Unidade de Fusor' | 'Unidade de Imagem')}
             className="px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white outline-none focus:border-blue-500 transition-all font-medium text-slate-700"
           >
             <option value="Todos">Todas Categorias</option>
@@ -422,7 +422,7 @@ const StockManagement: React.FC = () => {
       {/* CREATE & EDIT MODAL */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-xl shadow-xl border border-slate-200 w-full max-w-lg p-6 space-y-4">
+          <div className="bg-white rounded-xl shadow-xl border border-slate-200 w-full max-w-lg mx-4 p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <h3 className="text-lg font-bold text-slate-800 border-b pb-2">
               {editingItem ? 'Editar Insumo no Estoque' : 'Cadastrar Novo Insumo'}
             </h3>
@@ -441,7 +441,7 @@ const StockManagement: React.FC = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="form_categoria" className="block text-xs font-bold text-slate-500 uppercase">Categoria *</label>
                   <select
@@ -473,7 +473,7 @@ const StockManagement: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="form_quantidade_atual" className="block text-xs font-bold text-slate-500 uppercase">Qtd Disponível *</label>
                   <input

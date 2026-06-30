@@ -102,7 +102,7 @@ describe('InvoiceList Integration Tests', () => {
     await screen.findByText('NF-123456');
 
     // Abre o modal de emissão
-    const processarBtn = screen.getByText('+ Processar Fechamento (NF)');
+    const processarBtn = screen.getByText('+ Novo Fechamento (Saída)');
     await user.click(processarBtn);
 
     // Verifica que o modal abriu

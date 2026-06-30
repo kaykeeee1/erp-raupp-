@@ -53,7 +53,7 @@ describe('BarcodeScanning Integration Tests', () => {
     expect(await screen.findByText('Toner HP CF283A (83A)')).toBeInTheDocument();
 
     // Digita o código de barras no input do bipador
-    const barcodeInput = screen.getByPlaceholderText('Bipar EAN...');
+    const barcodeInput = screen.getByPlaceholderText('Bipar EAN…');
     await user.type(barcodeInput, '7891234567890');
 
     // Clica no botão Bipar
@@ -78,7 +78,7 @@ describe('BarcodeScanning Integration Tests', () => {
     expect(await screen.findByText('Toner HP CF283A (83A)')).toBeInTheDocument();
 
     // Digita um código novo
-    const barcodeInput = screen.getByPlaceholderText('Bipar EAN...');
+    const barcodeInput = screen.getByPlaceholderText('Bipar EAN…');
     await user.type(barcodeInput, '7899999999999');
 
     // Clica no botão Bipar

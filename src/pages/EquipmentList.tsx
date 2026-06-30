@@ -214,7 +214,7 @@ const EquipmentList: React.FC = () => {
 
   return (
     <div className="p-6">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
         <div>
           <h3 className="text-lg font-bold text-slate-800">Parque de Máquinas</h3>
           <p className="text-slate-500 text-xs mt-0.5">Rastreamento de ativos e alocações geográficas/setoriais.</p>
@@ -305,14 +305,14 @@ const EquipmentList: React.FC = () => {
 
       {/* MODAL DE CADASTRO/EDIÇÃO */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="bg-white rounded-xl shadow-xl border border-slate-200 w-full max-w-lg p-6 space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-xl shadow-xl border border-slate-200 w-full max-w-lg mx-4 p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <h3 className="text-lg font-bold text-slate-800 border-b pb-2">
               {editingEquip ? 'Editar Equipamento' : 'Cadastrar Equipamento'}
             </h3>
 
             <form onSubmit={handleSubmitEquipamento} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase">Marca *</label>
                   <input type="text" name="marca" value={formData.marca} onChange={handleInputChange} required className="w-full px-3 py-2 mt-1 border rounded-lg text-sm outline-none border-slate-200" placeholder="Ex: Brother, HP" />
@@ -323,7 +323,7 @@ const EquipmentList: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase">Número de Série *</label>
                   <input type="text" name="numero_serie" value={formData.numero_serie} onChange={handleInputChange} required className="w-full px-3 py-2 mt-1 border rounded-lg text-sm outline-none border-slate-200" />
@@ -334,7 +334,7 @@ const EquipmentList: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase">Contador Inicial</label>
                   <input type="number" name="contador_inicial" value={formData.contador_inicial} onChange={handleInputChange} className="w-full px-3 py-2 mt-1 border rounded-lg text-sm outline-none border-slate-200" />

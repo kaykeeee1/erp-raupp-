@@ -211,7 +211,7 @@ const MaintenanceList: React.FC = () => {
         }
       `}</style>
 
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
         <div>
           <h3 className="text-lg font-bold text-slate-800">Manutenção em Bancada</h3>
           <p className="text-slate-500 text-xs mt-0.5">Controle de laboratório interno, orçamentos e consertos avulsos.</p>
@@ -299,8 +299,8 @@ const MaintenanceList: React.FC = () => {
 
       {/* MODAL 1: ENTRADA DE EQUIPAMENTO */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6 space-y-4 border">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 p-6 space-y-4 border max-h-[90vh] overflow-y-auto">
             <h3 className="text-base font-bold text-slate-800 border-b pb-2">Nova OS de Oficina (Entrada)</h3>
             <form onSubmit={handleAbrirOS} className="space-y-4">
               
@@ -345,7 +345,7 @@ const MaintenanceList: React.FC = () => {
                   </select>
                 </div>
               ) : (
-                <div className="grid grid-cols-3 gap-2 p-3 bg-amber-50/50 border border-amber-200/60 rounded-xl">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 p-3 bg-amber-50/50 border border-amber-200/60 rounded-xl">
                   <div>
                     <label className="block text-[10px] font-bold text-slate-500 uppercase">Marca *</label>
                     <input type="text" value={formData.marca} onChange={(e) => setFormData(prev => ({ ...prev, marca: e.target.value }))} required className="w-full px-2 py-1.5 mt-1 border rounded bg-white text-xs outline-none" placeholder="Brother" />
@@ -377,8 +377,8 @@ const MaintenanceList: React.FC = () => {
 
       {/* MODAL 2: LAUDO TÉCNICO */}
       {selectedOS && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6 space-y-4 border">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 p-6 space-y-4 border max-h-[90vh] overflow-y-auto">
             <h3 className="text-base font-bold text-slate-800 border-b pb-2">Laudo e Evolução de Oficina</h3>
             <form onSubmit={handleAtualizarOS} className="space-y-4">
               <div>
@@ -424,7 +424,7 @@ const MaintenanceList: React.FC = () => {
                 <label htmlFor="form_diagnostico" className="block text-xs font-bold text-slate-500 uppercase">Diagnóstico Técnico / Peças Trocadas</label>
                 <textarea id="form_diagnostico" value={laudoData.diagnostico_tecnico} onChange={(e) => setLaudoData(prev => ({ ...prev, diagnostico_tecnico: e.target.value }))} rows={3} className="w-full px-3 py-2 mt-1 border rounded-lg text-sm outline-none resize-none" />
               </div>
-              <div className="grid grid-cols-2 gap-4 p-3 bg-slate-50 rounded-xl border border-slate-200/60">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-3 bg-slate-50 rounded-xl border border-slate-200/60">
                 <div>
                   <label htmlFor="form_custo_pecas" className="block text-xs font-bold text-slate-500 uppercase">Custo de Peças (R$)</label>
                   <input id="form_custo_pecas" type="number" step="0.01" value={laudoData.valor_pecas} onChange={(e) => setLaudoData(prev => ({ ...prev, valor_pecas: e.target.value }))} className="w-full px-3 py-1.5 mt-1 border rounded-lg text-sm bg-white outline-none" />

@@ -1,7 +1,7 @@
 # Antigravity Agent Toolkit — Arquitetura
 
 > **Kit de Ferramentas para Agentes de IA com Desenvolvimento Assistido**
-> Transforme qualquer assistente de código IA em um especialista de domínio com 21 agentes, 53 habilidades e 15 fluxos de trabalho.
+> Transforme qualquer assistente de código IA em um especialista de domínio com 22 agentes, 55 habilidades e 16 fluxos de trabalho.
 
 ---
 
@@ -29,9 +29,9 @@ graph TB
 
 | Componente | Quantidade | O que faz |
 | :--- | :---: | :--- |
-| **Agentes** | 21 | Personas IA especialistas (frontend, backend, segurança, IA, etc.) |
-| **Habilidades** | 53 | Módulos de conhecimento sob demanda carregados pelos agentes |
-| **Workflows** | 15 | Procedimentos passo a passo invocados via comandos slash |
+| **Agentes** | 22 | Personas IA especialistas (frontend, backend, segurança, IA, etc.) |
+| **Habilidades** | 55 | Módulos de conhecimento sob demanda carregados pelos agentes |
+| **Workflows** | 16 | Procedimentos passo a passo invocados via comandos slash |
 | **Scripts** | 13 | Ferramentas executáveis em Python/Bash/PowerShell |
 
 ---
@@ -97,7 +97,7 @@ Todos os arquivos ficam em `.agent/` na raiz do projeto:
 
 ---
 
-## 🤖 Agentes (21)
+## 🤖 Agentes (22)
 
 Agentes são **personas IA especialistas**. Quando você faz uma requisição, o **Roteador Inteligente** seleciona automaticamente o melhor agente para o trabalho.
 
@@ -167,10 +167,11 @@ graph LR
 | `code-archaeologist` | Código legado e refatoração | clean-code, code-review-checklist |
 | `explorer-agent` | Análise de codebase | — |
 | `ai-architect` | Sistemas IA, RAG e LLMs | rag-patterns, llm-finetuning, dataset-curation, ai-security, rag-evaluation |
+| `rpa-engineer` | Automação e web scraping | rpa-patterns, context-engineering |
 
 ---
 
-## 📚 Habilidades (53)
+## 📚 Habilidades (55)
 
 Habilidades são **módulos de conhecimento sob demanda**. Um agente carrega apenas as habilidades que precisa — mantendo o contexto enxuto e as respostas precisas.
 
@@ -332,9 +333,16 @@ graph TB
 | `rust-pro` | Rust 1.75+, Tokio e axum |
 | `agent-memory` | Memória de longo prazo e preferências do usuário |
 
+#### 🤖 RPA e Automação
+
+| Habilidade | Descrição |
+| :--- | :--- |
+| `rpa-patterns` | Padrões de automação, retry e seletores resilientes |
+| `context-engineering` | Engenharia de contexto, token pruning e injeção estruturada |
+
 ---
 
-## 🔄 Workflows (15)
+## 🔄 Workflows (16)
 
 Workflows são **procedimentos passo a passo** armazenados como arquivos `.md`. Eles guiam o agente em processos de múltiplas etapas.
 
@@ -342,6 +350,7 @@ Workflows são **procedimentos passo a passo** armazenados como arquivos `.md`. 
 | :--- | :--- | :--- |
 | `brainstorm.md` | `/brainstorm` | Descoberta socrática para projetos e features |
 | `build-agent.md` | `/build-agent` | Criar novos agentes especialistas |
+| `build-rpa.md` | `/build-rpa` | Fluxo guiado para criar automações e scrapers RPA |
 | `create.md` | `/create` | Criar novas aplicações |
 | `debug.md` | `/debug` | Debugging sistemático |
 | `deploy.md` | `/deploy` | Deploy em produção |
@@ -583,9 +592,9 @@ graph TB
 
 | Métrica | Valor |
 | :--- | :--- |
-| **Total de Agentes** | 21 |
-| **Total de Habilidades** | 53 (11 especializadas em IA/LLM) |
-| **Total de Workflows** | 15 |
+| **Total de Agentes** | 22 |
+| **Total de Habilidades** | 55 (11 especializadas em IA/LLM) |
+| **Total de Workflows** | 16 |
 | **Total de Scripts** | 13 |
 | **Auditoria de IA** | RAG 10/10 · Agentes 10/10 · Fine-tuning 10/10 |
 | **Cobertura** | ~98% dev web / mobile / IA |
@@ -620,6 +629,7 @@ graph TB
 | Melhorar SEO | `seo-specialist` | seo-fundamentals, geo-fundamentals |
 | Criar um jogo | `game-developer` | game-development |
 | Fazer deploy em produção | `devops-engineer` | deployment-procedures, docker-expert |
+| Criar automações e raspagem | `rpa-engineer` | rpa-patterns, context-engineering |
 
 ---
 
