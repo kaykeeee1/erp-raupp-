@@ -206,7 +206,7 @@ const ClientList: React.FC = () => {
 
   return (
     <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
         <div>
           <h3 className="text-lg font-bold text-slate-800">Base de Clientes Contratantes</h3>
           <p className="text-slate-500 text-xs mt-0.5">Gestão de carteira, termos comerciais e pontos de instalação.</p>
@@ -285,13 +285,13 @@ const ClientList: React.FC = () => {
 
       {/* MODAL DE CLIENTE (CREATE / EDIT) */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="bg-white rounded-xl shadow-xl border border-slate-200 w-full max-w-xl p-6 space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-xl shadow-xl border border-slate-200 w-full max-w-xl mx-4 p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <h3 className="text-lg font-bold text-slate-800 border-b pb-2">
               {editingCliente ? 'Editar Cliente' : 'Cadastrar Novo Cliente'}
             </h3>
             <form onSubmit={handleSubmitCliente} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase">Razão Social *</label>
                   <input type="text" name="razao_social" value={formData.razao_social} onChange={handleInputChange} required className="w-full px-3 py-2 mt-1 border rounded-lg text-sm outline-none border-slate-200" />
@@ -301,7 +301,7 @@ const ClientList: React.FC = () => {
                   <input type="text" name="cnpj" value={formData.cnpj} onChange={handleInputChange} required className="w-full px-3 py-2 mt-1 border rounded-lg text-sm outline-none border-slate-200" />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase">E-mail</label>
                   <input type="email" name="email" value={formData.email} onChange={handleInputChange} className="w-full px-3 py-2 mt-1 border rounded-lg text-sm outline-none border-slate-200" />
@@ -313,7 +313,7 @@ const ClientList: React.FC = () => {
               </div>
               <div className="p-4 bg-blue-50/60 rounded-xl border border-blue-100/80 space-y-3">
                 <h4 className="text-xs font-bold text-blue-700 uppercase tracking-wider">⚙️ Parâmetros Contratuais</h4>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-[10px] font-bold text-slate-500 uppercase">Qtd Franquia (Páginas)</label>
                     <input type="number" name="franquia_paginas" value={formData.franquia_paginas} onChange={handleInputChange} className="w-full px-2.5 py-1.5 mt-1 border rounded-md text-sm outline-none border-slate-200" />
@@ -337,8 +337,8 @@ const ClientList: React.FC = () => {
 
       {/* MODAL: GERENCIADOR DE MÚLTIPLOS LOCAIS POR CLIENTE */}
       {selectedCliente && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-2xl p-6 space-y-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-2xl mx-4 p-6 space-y-6 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center border-b pb-3">
               <div>
                 <h3 className="text-lg font-bold text-slate-900">Pontos de Instalação / Setores</h3>
@@ -349,7 +349,7 @@ const ClientList: React.FC = () => {
 
             <form onSubmit={handleCreateLocal} className="p-4 bg-slate-50 rounded-xl border border-slate-200/80 space-y-3">
               <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wide">+ Adicionar Novo Ponto/Setor</h4>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="col-span-1">
                   <label className="block text-[10px] font-bold text-slate-500 uppercase">Identificação *</label>
                   <input type="text" name="nome_local" value={localFormData.nome_local} onChange={handleLocalInputChange} required placeholder="Ex: Filial Norte / RH" className="w-full px-2.5 py-1.5 mt-1 border bg-white rounded-md text-xs outline-none border-slate-200" />

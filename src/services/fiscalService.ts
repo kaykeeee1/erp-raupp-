@@ -18,6 +18,20 @@ export interface ParsedInvoiceXml {
   itens: XmlInvoiceItem[];
 }
 
+export interface FinanceiroLancamento {
+  id: string;
+  descricao: string;
+  tipo: 'Receita' | 'Despesa';
+  valor: number;
+  status: 'Pendente' | 'Pago' | 'Cancelado';
+  data_vencimento: string;
+  data_pagamento: string | null;
+  nota_fiscal_id: string | null;
+  cliente_id: string | null;
+  criado_em: string;
+  tb_clientes: { razao_social: string } | null;
+}
+
 export const fiscalService = {
   /**
    * Faz o parsing client-side de um arquivo XML de NF-e
@@ -160,7 +174,7 @@ export const fiscalService = {
     xml_raw?: string;
     data_emissao: string;
     cliente_id?: string | null;
-    metadados_fiscais?: any;
+    metadados_fiscais?: Record<string, unknown> | null;
   }): Promise<void> {
     const { error } = await supabase
       .from('tb_notas_fiscais')
@@ -172,26 +186,24 @@ export const fiscalService = {
   /**
    * Retorna os lançamentos financeiros da tabela tb_financeiro
    */
-  async getLancamentosFinanceiros(): Promise<any[]> {
+  async getLancamentosFinanceiros(): Promise<FinanceiroLancamento[]> {
     const { data, error } = await supabase
       .from('tb_financeiro')
       .select('*, tb_clientes(razao_social)')
       .order('criado_em', { ascending: false });
 
     if (error) throw error;
-    return data || [];
+    return (data || []) as unknown as FinanceiroLancamento[];
   },
 
   /**
    * Altera o status de pagamento de um lançamento financeiro
    */
   async updateFinanceiroStatus(id: string, status: 'Pendente' | 'Pago' | 'Cancelado', dataPagamento?: string): Promise<void> {
-    const payload: any = { status };
-    if (status === 'Pago') {
-      payload.data_pagamento = dataPagamento || new Date().toISOString();
-    } else {
-      payload.data_pagamento = null;
-    }
+    const payload: { status: 'Pendente' | 'Pago' | 'Cancelado'; data_pagamento: string | null } = {
+      status,
+      data_pagamento: status === 'Pago' ? (dataPagamento || new Date().toISOString()) : null
+    };
 
     const { error } = await supabase
       .from('tb_financeiro')

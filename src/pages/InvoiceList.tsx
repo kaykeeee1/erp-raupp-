@@ -9,6 +9,9 @@ interface NotaFiscal {
   valor_bruto: number;
   status: string;
   data_emissao: string;
+  fornecedor_nome?: string;
+  chave_acesso?: string;
+  xml_raw?: string;
   metadados_fiscais: {
     contador_anterior?: number;
     contador_atual?: number;
@@ -193,7 +196,7 @@ const InvoiceList: React.FC = () => {
         }}
       />
 
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
         <div>
           <h3 className="text-lg font-bold text-slate-800 font-display">Faturamento Automatizado</h3>
           <p className="text-slate-500 text-xs mt-0.5">Fechamento de faturas com geração de extratos auditáveis para o cliente.</p>
@@ -254,7 +257,7 @@ const InvoiceList: React.FC = () => {
                     <span className="block text-xs text-slate-400">{nota.tipo_nota}</span>
                   </td>
                   <td className="px-6 py-4 font-semibold text-slate-800">
-                    {nota.tb_clientes?.razao_social || (nota as any).fornecedor_nome || 'Fornecedor/Cliente Não Identificado'}
+                    {nota.tb_clientes?.razao_social || nota.fornecedor_nome || 'Fornecedor/Cliente Não Identificado'}
                   </td>
                   <td className="px-6 py-4 font-mono text-xs text-slate-600">
                     {nota.tipo_nota === 'Entrada' ? (
@@ -299,7 +302,7 @@ const InvoiceList: React.FC = () => {
       {/* MODAL DE FECHAMENTO */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-xl shadow-xl border border-slate-200 w-full max-w-lg p-6 space-y-4">
+          <div className="bg-white rounded-xl shadow-xl border border-slate-200 w-full max-w-lg mx-4 p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <h3 className="text-lg font-bold text-slate-800 border-b pb-2">Novo Fechamento de Contrato</h3>
             <form onSubmit={handleEmitirNota} className="space-y-4">
               <div>
@@ -316,7 +319,7 @@ const InvoiceList: React.FC = () => {
                   <div>Clique Extra: R$ {selectedCliente.valor_clique_excedente.toFixed(4)}</div>
                 </div>
               )}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="contador_anterior" className="block text-xs font-bold text-slate-500 uppercase">Contador Anterior *</label>
                   <input id="contador_anterior" type="number" name="contador_anterior" value={formData.contador_anterior} onChange={(e) => setFormData(prev => ({ ...prev, contador_anterior: e.target.value }))} required className="w-full px-3 py-2 mt-1 border rounded-lg text-sm outline-none border-slate-200" />

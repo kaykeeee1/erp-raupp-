@@ -188,7 +188,7 @@ const FinanceList: React.FC = () => {
           </div>
           <select
             value={tipoFilter}
-            onChange={(e) => setTipoFilter(e.target.value as any)}
+            onChange={(e) => setTipoFilter(e.target.value as 'Todos' | 'Receita' | 'Despesa')}
             className="px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white outline-none focus:border-blue-500 transition-all font-medium text-slate-700"
           >
             <option value="Todos">Todos Lançamentos</option>
@@ -197,7 +197,7 @@ const FinanceList: React.FC = () => {
           </select>
           <select
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as any)}
+            onChange={(e) => setStatusFilter(e.target.value as 'Todos' | 'Pendente' | 'Pago' | 'Cancelado')}
             className="px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white outline-none focus:border-blue-500 transition-all font-medium text-slate-700"
           >
             <option value="Todos">Todos Status</option>
